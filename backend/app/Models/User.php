@@ -14,14 +14,13 @@ class User extends Authenticatable
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'name',
-        'username',      // TAMBAH
-        'ktp_number',    // TAMBAH
-        'email',
-        'password',
-        'role',          // TAMBAH
-    ];
+    'name', 'username', 'ktp_number', 'email', 'password', 'role'
+];
 
+public function getAuthIdentifierName()
+{
+    return 'username';
+}
     /**
      * The attributes that should be hidden for serialization.
      */
