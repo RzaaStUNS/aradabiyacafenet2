@@ -38,7 +38,7 @@ Setiap anggota bekerja di branch pribadi, lalu membuat **Pull Request (PR)** ke 
 git clone https://github.com/RzaaStUNS/Aradabiyacafnet2.git
 
 # Masuk ke folder proyek
-cd Aradabiyacafnet
+| cd | Aradabiyacafnet |
 2. Buat Branch Pribadi
 bash
 Copy code
