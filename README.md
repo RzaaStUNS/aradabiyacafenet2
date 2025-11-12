@@ -35,7 +35,7 @@ Setiap anggota bekerja di branch pribadi, lalu membuat **Pull Request (PR)** ke 
 
 # Fork repo ini ke akun GitHub kamu
 # Clone ke komputer lokal
-git clone https://github.com/[username-kamu]/Aradabiyacafnet.git
+git clone https://github.com/RzaaStUNS/Aradabiyacafnet2.git
 
 # Masuk ke folder proyek
 cd Aradabiyacafnet
@@ -43,7 +43,7 @@ cd Aradabiyacafnet
 bash
 Copy code
 # Buat branch untuk kerja pribadi
-git checkout -b [nama-kamu-branch]
+git checkout -b [branchmu]
 
 # Contoh
 git checkout -b ranu-frontend
