@@ -1,4 +1,4 @@
-# ☕ Aradabiya Cafe Net
+### Aradabiya Cafe Net
 
 Selamat datang di repositori **Aradabiya Cafe Net**!  
 Proyek ini mengembangkan sistem manajemen **cafe net (warnet modern)** dengan fitur:
@@ -17,7 +17,7 @@ Setiap anggota bekerja di branch pribadi, lalu membuat **Pull Request (PR)** ke 
 
 ---
 
-## 👥 Anggota Tim
+### 👥 Anggota Tim
 
 | Nama | Tugas |
 |------|-------|
@@ -29,9 +29,9 @@ Setiap anggota bekerja di branch pribadi, lalu membuat **Pull Request (PR)** ke 
 
 ---
 
-## ⚙️ Setup Proyek di Visual Studio Code
+### ⚙️ Setup Proyek di Visual Studio Code
 
-### 1. Fork & Clone Repositori
+# 1. Fork & Clone Repositori
 
 ```bash
 # Fork repo ini ke akun GitHub kamu
@@ -126,7 +126,7 @@ Test Scheduler (pengurangan saldo otomatis):
 ```bash
 php artisan schedule:run
 ```
-# 🚀 Workflow Kolaborasi Git
+### 🚀 Workflow Kolaborasi Git
 1. Mulai Kerja
 Sync dengan main branch
 ```bash
@@ -167,14 +167,14 @@ Setelah PR di-approve dan merge ke main
 git checkout main
 git pull origin main
 ```
-# 💡 Tips Kolaborasi
+### 💡 Tips Kolaborasi
 Gunakan format commit: feat:, fix:, docs:, style:
 Test semua fitur sebelum PR
 Gunakan nama branch: [nama]-[fitur], contoh: ranu-topup-form
 Diskusikan ide di Issues GitHub atau grup WA
 Push rutin agar progress aman
 
-# ⚠️ Catatan Penting
+### ⚠️ Catatan Penting
 JANGAN PUSH LANGSUNG KE MAIN! Selalu lewat Pull Request
 JANGAN HAPUS BRANCH ORANG LAIN tanpa izin
 Selalu PULL MAIN sebelum mulai coding
@@ -182,7 +182,7 @@ Update dependency jika menambah package (composer.json / package.json)
 JANGAN COMMIT .env, gunakan .env.example
 JAGA KEAMANAN, jangan commit password atau API key
 
-# 🖥️ Jalankan di Visual Studio Code
+### 🖥️ Jalankan di Visual Studio Code
 Buka dua terminal di VS Code:
 
 Terminal 1 – Backend
