@@ -1,4 +1,4 @@
-### Aradabiya Cafe Net
+### ☕ Aradabiya Cafe Net 📺
 
 Selamat datang di repositori **Aradabiya Cafe Net**!  
 Proyek ini mengembangkan sistem manajemen **cafe net (warnet modern)** dengan fitur:
