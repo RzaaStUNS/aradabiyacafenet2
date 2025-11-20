@@ -1,34 +1,52 @@
 // src/App.jsx
 import { Routes, Route } from "react-router-dom";
-import Login from "./pages/login";
-import AdminDashboard from "./pages/dashboard/Admin";
-import CashierDashboard from "./pages/dashboard/Cashier";
-import CustomerDashboard from "./pages/dashboard/Customer";
-import NotFound from "./pages/NotFound";
-import ProtectedRoute from "./components/ProtectedRoute";
+import Login from "@/pages/login";
+import AdminDashboard from "@/pages/dashboard/Admin";
+import CashierDashboard from "@/pages/dashboard/Cashier";
+import CustomerDashboard from "@/pages/dashboard/Customer";
+import Test from "@/pages/Test";
+import NotFound from "@/pages/NotFound";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 function App() {
   return (
-    <>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Login />} />
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<Login />} />
 
-        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route path="/admin" element={<AdminDashboard />} />
-        </Route>
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cashier"
+        element={
+          <ProtectedRoute roles={["cashier"]}>
+            <CashierDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer"
+        element={
+          <ProtectedRoute roles={["customer"]}>
+            <CustomerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/test"
+        element={
+            <Test />
+        }
+      />
 
-        <Route element={<ProtectedRoute allowedRoles={["cashier"]} />}>
-          <Route path="/cashier" element={<CashierDashboard />} />
-        </Route>
-
-        <Route element={<ProtectedRoute allowedRoles={["customer"]} />}>
-          <Route path="/customer" element={<CustomerDashboard />} />
-        </Route>
-
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </>
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 
