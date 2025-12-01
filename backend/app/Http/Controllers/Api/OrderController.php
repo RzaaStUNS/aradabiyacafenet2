@@ -44,7 +44,7 @@ class OrderController extends Controller
                 'room_id' => $request->room_id,    // Dari PC mana
                 'total_price' => $totalPrice,
                 'status' => 'pending',             // Status awal: Menunggu dimasak
-                'payment_method' => 'pay_later'    // Bayar nanti di kasir
+                'payment_method' => 'cash_on_delivery'    // Bayar nanti di kasir
             ]);
 
             // Simpan Detail Item (Nasi Goreng 2x, Teh 1x)

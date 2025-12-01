@@ -2,50 +2,57 @@
 
 namespace App\Models;
 
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Laravel\Sanctum\HasApiTokens; // <--- Pastikan ini ada
+use App\Models\UserSession;       // <--- INI YANG SERING LUPA
 
 class User extends Authenticatable
 {
-    use HasApiTokens, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * Atribut yang bisa diisi manual (Mass Assignable)
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
      */
     protected $fillable = [
         'name',
-        'username',
-        'ktp_number',
         'email',
+        'username',     // Tambahan
+        'ktp_number',   // Tambahan
         'password',
-        'role',
-        'balance_time', // PENTING: Agar bisa top-up saldo
-        'is_active',    // PENTING: Agar status login bisa diubah
+        'role',         // Tambahan (admin/staff/customer)
+        'balance_time', // Tambahan (saldo)
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_active' => 'boolean',
-        ];
-    }
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
 
-    // === METHOD BANTUAN ===
-    // Cek apakah user adalah admin
-    public function isAdmin() {
-        return $this->role === 'admin';
-    }
+    // --- RELASI TAMBAHAN ---
 
-    // Cek apakah user adalah staff
-    public function isStaff() {
-        return $this->role === 'staff';
-    }
+    // Relasi ke Sesi Aktif (Untuk Timer di Frontend)
+    public function activeSession()
+{
+    return $this->hasOne(UserSession::class)->where('status', 'active')->latest();
+}
 }

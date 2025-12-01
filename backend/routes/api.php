@@ -10,10 +10,11 @@ use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\RoomController; // <--- JANGAN LUPA INI!
+use App\Http\Controllers\Api\RoomController; // <--- INI WAJIB ADA
 
+// Route User (Load relasi activeSession biar frontend tau)
 Route::get('/user', function (Request $request) {
-    return $request->user();
+    return $request->user()->load(['activeSession.room']);
 })->middleware('auth:sanctum');
 
 // Auth Routes
@@ -21,44 +22,34 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
-// 1. Route Khusus Order (Bisa Customer, Admin, Staff)
+// 1. Route Customer & Umum (Yang penting Login)
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders', [OrderController::class, 'index']); // Customer lihat riwayat sendiri
 });
 
-// 2. Routes Khusus Admin & Staff (Manajemen User & Sesi Lama)
-Route::middleware(['auth:sanctum', 'role:admin,staff'])->group(function () {
-    Route::post('/customers', [CustomerController::class, 'store']);
-    Route::post('/customers/{id}/topup', [BillingController::class, 'topup']);
-    Route::post('/orders/{id}/pay', [OrderController::class, 'pay']);   
-
-    // Session Management (Backup/Lama)
-    Route::post('/sessions/start', [SessionController::class, 'start']);
-    Route::post('/sessions/{id}/end', [SessionController::class, 'end']);
-
-    // Melihat semua order
-    Route::get('/orders', [OrderController::class, 'index']);
-});
-
-// 3. Routes Khusus Admin (FULL POWER)
+// 2. Route Admin (Full Power)
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     // Staff & Report
     Route::apiResource('staff', StaffController::class)->except(['show']);
     Route::get('reports/daily', [ReportController::class, 'daily']);
     Route::get('/dashboard-stats', [ReportController::class, 'dashboardStats']);
     
-    // Manajemen Menu & Order
+    // Manajemen Menu & Order (Admin)
     Route::post('/menus', [MenuController::class, 'store']);
     Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
     
     // Billing / Kasir
     Route::post('/billing/topup', [BillingController::class, 'topup']);
 
-    // --- FITUR MONITORING ROOM (BARU) ---
-    Route::get('/rooms', [RoomController::class, 'index']); // Lihat Denah
-    Route::post('/rooms/{id}/start', [RoomController::class, 'startSession']); // Mulai Sewa
-    Route::post('/rooms/{id}/stop', [RoomController::class, 'stopSession']); // Stop Sewa
+    // Manajemen User
+    Route::post('/customers', [CustomerController::class, 'store']);
+
+    // Monitoring Room (Sistem Warnet)
+    Route::get('/rooms', [RoomController::class, 'index']); 
+    Route::post('/rooms/{id}/start', [RoomController::class, 'startSession']); 
+    Route::post('/rooms/{id}/stop', [RoomController::class, 'stopSession']); 
 });
 
-// Public Routes
+// Public Route (Bisa diakses tanpa login, misal scan QR)
 Route::get('/menus', [MenuController::class, 'index']);
