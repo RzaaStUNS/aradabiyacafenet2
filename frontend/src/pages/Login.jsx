@@ -51,7 +51,7 @@ export default function Login() {
       <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/95 border-2 border-primary/20 shadow-2xl">
         <CardHeader className="space-y-3 text-center">
           <div className="mx-auto w-16 h-16 bg-linear-to-br from-primary to-accent rounded-2xl flex items-center justify-center shadow-lg shadow-primary/50">
-            ☕
+            
           </div>
           <CardTitle className="text-3xl font-bold bg-linear-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
             Aradabiya
