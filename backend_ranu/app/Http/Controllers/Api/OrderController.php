@@ -15,8 +15,10 @@ class OrderController extends Controller
     // GET: List Order
     public function index(Request $request)
     {
-        $query = Order::with(['items.menu', 'user', 'customer', 'room'])->orderBy('created_at', 'desc');
+        $query = Order::with(['items.menu', 'user', 'customer', 'room'])
+            ->orderBy('created_at', 'desc');
 
+        // Customer cuma lihat order sendiri
         if ($request->user() && $request->user()->role === 'customer') {
             $query->where('user_id', $request->user()->id);
         }
@@ -39,13 +41,15 @@ class OrderController extends Controller
         |--------------------------------------------------------------------------
         */
         if ($type === 'food') {
-
             $validator = Validator::make($request->all(), [
                 'items' => 'required'
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['status' => false, 'message' => $validator->errors()], 422);
+                return response()->json([
+                    'status' => false,
+                    'message' => $validator->errors()
+                ], 422);
             }
 
             try {
@@ -64,7 +68,7 @@ class OrderController extends Controller
                     }
                 }
 
-                // Cek saldo
+                // ✅ VALIDASI saldo (tapi JANGAN potong dulu!)
                 if ($user->balance_time < $calculatedTotal) {
                     return response()->json([
                         'status' => false,
@@ -72,17 +76,13 @@ class OrderController extends Controller
                     ], 400);
                 }
 
-                // Potong saldo
-                $user->balance_time -= $calculatedTotal;
-                $user->save();
-
-                // SIMPAN ORDER – FIX ⇒ status harus "paid"
+                // ✅ SIMPAN ORDER dengan status PENDING
                 $order = Order::create([
                     'user_id' => $user->id,
                     'room_id' => $request->room_id,
                     'type' => 'food',
                     'total_price' => $calculatedTotal,
-                    'status' => 'paid', // FIX
+                    'status' => 'pending', // ← FIX: pending dulu, biar masuk staff orders
                     'note' => $request->note,
                 ]);
 
@@ -104,7 +104,7 @@ class OrderController extends Controller
 
                 return response()->json([
                     'status' => true,
-                    'message' => 'Pesanan makanan berhasil!',
+                    'message' => 'Pesanan makanan berhasil dikirim ke staff!',
                     'data' => $order
                 ], 201);
 
@@ -123,9 +123,9 @@ class OrderController extends Controller
         |--------------------------------------------------------------------------
         */
         else {
+            $totalCost = $request->total_price ?? $request->total;
 
-            $totalCost = $request->total;
-
+            // ✅ VALIDASI saldo (tapi JANGAN potong dulu!)
             if ($user->balance_time < $totalCost) {
                 return response()->json([
                     'status' => false,
@@ -136,18 +136,14 @@ class OrderController extends Controller
             try {
                 DB::beginTransaction();
 
-                // Potong saldo
-                $user->balance_time -= $totalCost;
-                $user->save();
-
-                // SIMPAN ORDER – FIX ⇒ status awal paid
+                // ✅ SIMPAN ORDER dengan status PENDING
                 $order = Order::create([
                     'user_id' => $user->id,
                     'room_id' => $request->room_id,
                     'type' => $type,
                     'total_price' => $totalCost,
                     'duration' => $request->duration ?? 1,
-                    'status' => 'paid', // FIX
+                    'status' => 'pending', // ← FIX: pending dulu
                     'note' => $request->note,
                 ]);
 
@@ -155,7 +151,7 @@ class OrderController extends Controller
 
                 return response()->json([
                     'status' => true,
-                    'message' => 'Booking berhasil!',
+                    'message' => 'Booking berhasil dikirim ke staff!',
                     'data' => $order
                 ], 201);
 
@@ -179,65 +175,117 @@ class OrderController extends Controller
         $order = Order::find($id);
 
         if (!$order) {
-            return response()->json(['status' => false, 'message' => 'Order tidak ditemukan'], 404);
-        }
-
-        // jika staff menandai order selesai
-        if ($request->status === 'done') {
-
-            $order->status = 'completed'; // FIX: ini untuk laporan & dashboard
-            $order->save();
-
             return response()->json([
-                'status' => true,
-                'message' => 'Order diselesaikan',
-                'data' => $order
-            ]);
+                'status' => false,
+                'message' => 'Order tidak ditemukan'
+            ], 404);
         }
 
-        // Jika staff set processing (khusus rental)
-        if ($request->status === 'processing' && $order->type === 'rental') {
+        $newStatus = $request->status;
 
-            // Cek PC sedang dipakai atau tidak
-            $busy = \App\Models\UserSession::where('room_id', $order->room_id)
-                ->whereNull('end_time')
-                ->exists();
+        try {
+            DB::beginTransaction();
 
-            if ($busy) {
+            // ✅ STAFF KLAIM ORDER (pending → processing)
+            if ($newStatus === 'processing') {
+                // Untuk rental, mulai session
+                if ($order->type === 'rental') {
+                    // Cek PC sedang dipakai atau tidak
+                    $busy = \App\Models\UserSession::where('room_id', $order->room_id)
+                        ->whereNull('end_time')
+                        ->exists();
+
+                    if ($busy) {
+                        return response()->json([
+                            'status' => false,
+                            'message' => 'PC sedang digunakan'
+                        ], 400);
+                    }
+
+                    // Mulai sesi baru
+                    $session = \App\Models\UserSession::create([
+                        'user_id' => $order->user_id,
+                        'room_id' => $order->room_id,
+                        'start_time' => now(),
+                        'duration_hours' => $order->duration ?? 1,
+                        'status' => 'active'
+                    ]);
+                }
+
+                $order->status = 'processing';
+                $order->save();
+
+                DB::commit();
+
                 return response()->json([
-                    'status' => false,
-                    'message' => 'PC sedang digunakan'
-                ], 400);
+                    'status' => true,
+                    'message' => 'Order diklaim!',
+                    'data' => $order
+                ]);
             }
 
-            // Mulai sesi baru
-            $session = \App\Models\UserSession::create([
-                'user_id' => $order->user_id,
-                'room_id' => $order->room_id,
-                'start_time' => now(),
-                'duration_hours' => $order->duration ?? 1,
-                'status' => 'active'
-            ]);
+            // ✅ STAFF SELESAIKAN ORDER (processing → completed)
+            if ($newStatus === 'completed' || $newStatus === 'done') {
+                $user = $order->customer ?? $order->user;
+                $totalPrice = $order->total_price;
 
-            $order->status = 'processing';
+                // Validasi saldo lagi (safety check)
+                if ($user->balance_time < $totalPrice) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Saldo customer tidak cukup!'
+                    ], 400);
+                }
+
+                // ✅ POTONG SALDO DI SINI (saat order completed)
+                $user->balance_time -= $totalPrice;
+                $user->save();
+
+                $order->status = 'completed';
+                $order->save();
+
+                DB::commit();
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Order selesai! Saldo customer dipotong.',
+                    'data' => $order
+                ]);
+            }
+
+            // ✅ CANCEL ORDER
+            if ($newStatus === 'cancelled') {
+                $order->status = 'cancelled';
+                $order->save();
+
+                DB::commit();
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Order dibatalkan',
+                    'data' => $order
+                ]);
+            }
+
+            // Status lain (fallback)
+            $order->status = $newStatus;
             $order->save();
+
+            DB::commit();
 
             return response()->json([
                 'status' => true,
-                'message' => 'Session dimulai!',
-                'order' => $order,
-                'session' => $session
+                'message' => 'Status diperbarui',
+                'data' => $order
             ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal update status: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Status lain
-        $order->status = $request->status;
-        $order->save();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Status diperbarui',
-            'data' => $order
-        ]);
     }
 }

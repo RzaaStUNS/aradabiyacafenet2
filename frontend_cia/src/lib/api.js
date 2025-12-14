@@ -10,11 +10,12 @@ export { API_BASE_URL };
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Accept': 'application/json', // ← tambahkan ini
+    'Accept': 'application/json',
     'X-Requested-With': 'XMLHttpRequest'
   },
-  withCredentials: false // ← pastikan false karena pakai Bearer token
+  withCredentials: false // False karena kita pakai Bearer Token manual
 });
+
 // Attach token ke semua request
 api.interceptors.request.use(
   (config) => {
@@ -31,6 +32,7 @@ async function safeFetch(requestPromise, defaultValue = []) {
     const res = await requestPromise;
     const val = res.data;
 
+    // Handle berbagai format return Laravel
     if (val && val.data) return val.data;
     if (Array.isArray(val) || typeof val === "object") return val;
     return defaultValue;
@@ -58,7 +60,16 @@ export const login = async (creds) => {
   }
 };
 
-export const register = (payload) => api.post("/api/register", payload);
+// [UPDATE] Register dengan Error Handling yang lebih baik untuk Captcha/Validasi
+export const register = async (payload) => {
+  try {
+    const res = await api.post("/api/register", payload);
+    return res.data;
+  } catch (err) {
+    // Ambil pesan error spesifik dari backend (misal: "Captcha salah")
+    throw new Error(err.response?.data?.message || "Registrasi Gagal");
+  }
+};
 
 export const logout = async () => {
   try {
@@ -68,6 +79,20 @@ export const logout = async () => {
     localStorage.clear();
     window.location.href = "/";
   }
+};
+
+// =======================
+// 🛠️ SYSTEM & UTILS (SKD TOPICS)
+// =======================
+
+// [BARU] Untuk Backup Database (Topik 4)
+export const triggerBackup = async () => {
+    try {
+        const res = await api.get("/api/system/backup");
+        return res.data;
+    } catch (err) {
+        throw new Error(err.response?.data?.message || "Backup Gagal");
+    }
 };
 
 // =======================
@@ -106,7 +131,7 @@ export const updateRoom = (id, d) => api.put(`/api/rooms/${id}`, d);
 export const deleteRoom = (id) => api.delete(`/api/rooms/${id}`);
 
 // =======================
-// 🍔 MENUS CRUD
+// 🍔 MENUS CRUD (FILE UPLOAD SECURITY)
 // =======================
 
 export const createMenu = (data) => {
@@ -136,7 +161,7 @@ export const updateMenu = (id, data) => {
     form.append("image", data.image);
   }
 
-  form.append("_method", "PUT");
+  form.append("_method", "PUT"); // Trik Laravel untuk PUT file
 
   return api.post(`/api/menus/${id}`, form, {
     headers: { "Content-Type": "multipart/form-data" }
@@ -178,14 +203,14 @@ export const fetchMyOrders = async () => {
     const res = await api.get("/api/orders");
     const all = res.data.data || [];
 
-    const user = JSON.parse(localStorage.getItem("aradabiya_user"));
-    if (!user) return [];
+    const userStr = localStorage.getItem("aradabiya_user");
+    if (!userStr) return [];
+    const user = JSON.parse(userStr);
 
     return all.filter((o) => o.user_id === user.id);
   } catch {
     return [];
   }
 };
-
 
 export { api };
